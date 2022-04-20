@@ -93,7 +93,8 @@ if ~exist(icaFiltPath, 'file') || overwrite
                 zproj_interp(:,:,projCensScans) = [];
             end
             fprintf('\nWriting %s... ', projPath );
-            pipe.io.writeTiff(uint16(zproj_interp), projPath); toc
+            WriteTiff(uint16(zproj_interp), projPath); %pipe.io.writeTiff(uint16(zproj_interp), projPath); toc
+            toc
         elseif sbxInfo.totScan < 20000
             zproj_interp = WriteSbxPlaneTif(sbxPath, sbxInfo, 1, 'dir',sbxInfo.dir, 'name',sbxInfo.exptName, 'type','zproj', 'binT',1, 'verbose',true );
         else
@@ -103,7 +104,7 @@ if ~exist(icaFiltPath, 'file') || overwrite
     else
         fprintf('\nLoading %s...   ', projPath);  
         tic
-        zproj_interp = double(pipe.io.readTiff(projPath)); % double();  loadtiff(projPath)
+        zproj_interp = double(imread_big(projPath)); %double(pipe.io.readTiff(projPath)); % double();  loadtiff(projPath)
         toc
         if sbxInfo.Nplane > 1 % last scan of sbx_interp is bad
             tic

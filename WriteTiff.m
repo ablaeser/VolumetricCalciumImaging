@@ -10,7 +10,7 @@ function success = WriteTiff(array, filename, typestr)
 %   See also: readtiff
 %
 %$Id: writetiff.m 305 2008-07-18 20:55:10Z vincent $
-%   Edited 180731 by Arthur Sugden
+%   Edited 180731 by Arthur Sugden, Andrew Blaeser 2021
 
 % Correct the image type
 if nargin < 3, typestr = class(array); end

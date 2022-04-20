@@ -54,6 +54,9 @@ edges = [leftEdge, rightEdge, topEdge, bottomEdge] + 1;
 
 % Show the results
 if show
+    [ShowEdgeFig, ShowEdgeAx] = ShowEdges(edges, inputIm, binIm);
+    subplot(ShowEdgeAx(1)); title( sprintf('minInt = %i', minInt ) );
+    %{
     opt = {[0.01,0.03], [0.07,0.04], [0.02,0.02]};  % {[vert, horz], [bottom, top], [left, right] }
     figure('WindowState','maximized'); 
     sp(1) = subtightplot(1,3,1,opt{:});
@@ -83,5 +86,6 @@ if show
     line( [1, imSize(2)], (imSize(1)-edges(4))*[1,1], 'color','r', 'LineStyle','--');
     title( sprintf('edges: [L, R, T, B] = [%i, %i, %i, %i]', edges ) );
     linkaxes(sp,'xy');
+    %}
 end
 end

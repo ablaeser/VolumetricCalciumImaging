@@ -1,13 +1,14 @@
-sbxPath = 'D:\2photon\PNS2\211007\PNS2_211007_030.sbxfix';
+sbxPath = 'D:\2photon\NaVAi6-2\211210\NaVAi6-2_211210_007\NaVAi6-2_211210_007.sbxfix';
 %load('D:\2photon\NaV18PNSGcamp8s\NaV18PNSGcamp8s_210827_000.mat'); %
-sbxInfo = MakeInfoStruct('D:\2photon\PNS2\211007\PNS2_211007_030.mat');
+sbxInfo = MakeInfoStruct('D:\2photon\NaVAi6-2\211210\NaVAi6-2_211210_007\NaVAi6-2_211210_007.mat');
 
-WriteSbxPlaneTif(sbxPath, sbxInfo, 12, 'dir','D:\2photon\PNS2\211007\', 'name',sbxInfo.exptName, 'verbose',true, 'chan','both', 'binT',1, 'overwrite',true);  
+WriteSbxPlaneTif(sbxPath, sbxInfo, 7, 'dir','D:\2photon\NaVAi6-2\211210\NaVAi6-2_211210_007\', 'name',sbxInfo.fileName, 'verbose',true, 'chan','both', 'binT',5, 'overwrite',true);  
 
 %% Extract all sbx files within a folder
-mainDir = 'D:\2photon\NaVAi6-2\211026\';
+mainDir = 'D:\2photon\NaVGCaMP-01\';
 [sbxName, sbxPath] = FileFinder( mainDir, 'type','sbx' );
-for s = 1:numel(sbxPath) % flip(1:numel(sbxPath))
+flipZ = true;
+for s = flip(1:numel(sbxPath)) %1:numel(sbxPath) % flip(1:numel(sbxPath))
     sbxInfoPath = sbxPath{s};
     sbxInfoPath(end-2:end) = 'mat';
     % Move all files to a subfolder
@@ -26,9 +27,9 @@ for s = 1:numel(sbxPath) % flip(1:numel(sbxPath))
         WriteSbxPlaneTif(newSBXpath{1}, tempInfo, 1, 'dir',subDir, 'name',sbxName{s}, 'verbose',true, 'chan','both', 'binT',8, 'overwrite',false);  % tempStack =
         WriteSbxProjection(newSBXpath{1}, tempInfo, projPath, 'verbose',true, 'chan','both', 'overwrite',true);
     else
-        tempInfo = FixSBX(newSBXpath{1}, tempInfo, false);
-        fixPath = strcat(newSBXpath{1},'fix');
-        WriteSbxProjection(fixPath, tempInfo, projPath, 'verbose',true, 'chan','both', 'overwrite',true); % 'both'
+        tempInfo = FixSBX(newSBXpath{1}, tempInfo, flipZ, false);
+        fixPath = strcat(newSBXpath{1},'fix');       
+        WriteSbxProjection(fixPath, tempInfo, projPath, 'verbose',true, 'chan','both', 'overwrite',true, 'RGB',false, 'monochrome',false); % 'both'
         %WriteSbxPlaneTif(fixPath, tempInfo, 6, 'dir',subDir, 'name',sbxName{s}, 'verbose',true, 'chan','both', 'binT',1, 'overwrite',false); % fixPath
     end
 end

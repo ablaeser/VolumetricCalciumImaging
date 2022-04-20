@@ -1,4 +1,4 @@
-function [roiRGB, axonRGB] = VisualizeSegmentation(expt, ROI, varargin) % sbxPath, 
+function [roiRGB, axonRGB, roiLabel] = VisualizeSegmentation(expt, ROI, varargin) % sbxPath, 
 
 IP = inputParser;
 addRequired( IP, 'expt', @isstruct )
@@ -15,15 +15,16 @@ Naxon = numel(axon);
 
 % ROI
 roiCmap = distinguishable_colors(Nroi);
-roiLabelMat = zeros(expt.Nrow, expt.Ncol, expt.Nplane); % size(maxProj)
-for r = 1:Nroi,  roiLabelMat(ROI(r).ind) = r;  end
+roiLabel = zeros(expt.Nrow, expt.Ncol, expt.Nplane); % size(maxProj)
+for r = 1:Nroi,  roiLabel(ROI(r).ind) = r;  end
 if expt.Nplane > 1
-    roiRGB = label2rgb3d(roiLabelMat,roiCmap,'w');
+    roiRGB = label2rgb3d(roiLabel,roiCmap,'k'); % 'w'
     roiRGB = permute(roiRGB, [1,2,4,3]);
+    roiRGB = uint8(roiRGB);
 else
-    roiRGB = label2rgb(roiLabelMat,roiCmap,'w');
+    roiRGB = label2rgb(roiLabel,roiCmap,'w');
 end
-roiProjPath = strcat(expt.dir, expt.name,'_roiProj.tif');
+roiProjPath = strcat(expt.dir, expt.name,'_roiProj_RGB.tif'); % _roiProj_RGB.tif
 if ~exist(roiProjPath, 'file') || overwrite % && Nroi > 0
     fprintf('\nWriting %s\n', roiProjPath);
     saveastiff( uint16(roiRGB), roiProjPath, RGBOpt );

@@ -52,6 +52,8 @@ if ~isempty(zReg)
     % Define edges
     if isempty(params.edges)
         params.edges = GetEdges( refVol(:,:,end), 'minInt',params.minInt, 'show',true ); 
+    else
+        ShowEdges( params.edges, refVol(:,:,end) );
     end
     
     % Register plane by plane
@@ -67,7 +69,7 @@ if ~isempty(zReg)
         fprintf('Registering plane %d of %d...  ',z, Nplane);
         tic
         regTform(z,:) = RegisterSBX(sbxInputPath, sbxInfo, refVol(:,:,z), params, z, 'firstScan',firstScan, 'Nscan',Nscan, ...
-            'dir',tifDir, 'name',sprintf('%s_z%02d%s', fName, z, nameStr), 'verbose',false, 'intTif',false, 'finalTif',false, 'overwrite',overwrite);
+            'dir',tifDir, 'name',sprintf('%s_z%02d%s', fName, z, nameStr), 'verbose',false, 'intTif',false, 'finalTif',true, 'overwrite',overwrite);
         %regTform(z,:) = AffineTurboReg(sbxInputPath, sbxInfo, refVol(:,:,z), params, z, 'firstScan',1, 'Nscan',Nscan, ...
         %    'dir',tifDir, 'name',sprintf('%s_z%02d', fName, z), 'verbose',false, 'intTif',false, 'finalTif',false, 'overwrite',true); %  %56461:58592 Nscan
         fprintf('\nSaving %s ', tformPath);

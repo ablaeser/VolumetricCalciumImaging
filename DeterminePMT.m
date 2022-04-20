@@ -14,9 +14,8 @@ if ~isempty(pmtAvail)
     end
     usePMTind = find(strcmpi(pmtRequest, pmtAvail));
     if isempty(usePMTind) 
-        warning('Requested PMT (%s) not available, using %s instead!', requestColor, pmtAvail);
-        pmtRequest = pmtAvail;
-        usePMTind = find(strcmpi(pmtRequest, pmtAvail));
+        warning('Requested PMT (%s) not available, using %s instead!', requestColor, pmtAvail{1});
+        usePMTind = find(strcmpi(pmtAvail{1}, PMTname));
     end
 else
     error('No PMTs available!');

@@ -201,10 +201,10 @@ for c = 1:Nchunk
             if c == 1 % only need to save reference tif once since reference is the same for all chunks
                 rawRefTifPath = sprintf('%s%s_rawRef.tif', RegTempDir, saveName );
                 if verbose, fprintf('\nWriting %s', rawRefTifPath); end
-                pipe.io.writeTiff(uint16(rawRef), rawRefTifPath); %saveastiff( uint16(rawRef), rawRefTifPath, GrayOpt);
+                WriteTiff(uint16(rawRef), rawRefTifPath); %pipe.io.writeTiff(uint16(rawRef), rawRefTifPath); %saveastiff( uint16(rawRef), rawRefTifPath, GrayOpt);
                 preRefTifPath = sprintf('%s%s_preRef.tif', RegTempDir, saveName );
                 if verbose, fprintf('\nWriting %s', preRefTifPath); end
-                pipe.io.writeTiff(uint16(preRef), preRefTifPath); %saveastiff( uint16(preRef), preRefTifPath, GrayOpt);
+                WriteTiff(uint16(preRef), preRefTifPath); %saveastiff( uint16(preRef), preRefTifPath, GrayOpt);
             end
             if Nchunk > 1
                 %rawDataTifPath = sprintf('%s%s_chunk%04i_rawData.tif', RegTempDir, saveName, c  );
@@ -217,9 +217,9 @@ for c = 1:Nchunk
             end
             % Save raw tifs
             %if verbose, fprintf('\nWriting %s', rawDataTifPath); end
-            %pipe.io.writeTiff(uint16(rawData), rawDataTifPath); %saveastiff( uint16(preData), preDataTifPath, GrayOpt);
+            %WriteTiff(uint16(rawData), rawDataTifPath); %saveastiff( uint16(preData), preDataTifPath, GrayOpt);
             if verbose, fprintf('\nWriting %s', preDataTifPath); end
-            pipe.io.writeTiff(uint16(preData), preDataTifPath);
+            WriteTiff(uint16(preData), preDataTifPath);
         end
 
         % PERFORM REGISTRATION
@@ -291,7 +291,7 @@ for c = 1:Nchunk
                 postData(:,:,i) = imwarp(preData(:,:,i), reg_transforms{chunkScans(i)}, 'OutputView',imref2d(size(preRef)));
             end
             if verbose, fprintf('\nWriting %s ...', postDataTifPath); end
-            pipe.io.writeTiff(uint16(postData), postDataTifPath); %toc %saveastiff( uint16(postData), regDataTifPath, GrayOpt) ;
+            WriteTiff(uint16(postData), postDataTifPath); %toc %saveastiff( uint16(postData), regDataTifPath, GrayOpt) ;
         end
         
         % Correct reg_transforms for spatial downsampling
@@ -334,10 +334,10 @@ if nargout > 1 || writeFinalTif
     if writeFinalTif
         unregDataTifPath = sprintf('%s%s_unregData.tif', RegTempDir, saveName );
         if verbose, fprintf('\nWriting %s ...', unregDataTifPath); end
-        pipe.io.writeTiff(uint16(unregData), unregDataTifPath);
+        WriteTiff(uint16(unregData), unregDataTifPath);
         regDataTifPath = sprintf('%s%s_regData.tif', RegTempDir, saveName );
         if verbose, fprintf('\nWriting %s ...', regDataTifPath); end
-        pipe.io.writeTiff(uint16(regData), regDataTifPath); %toc %saveastiff( uint16(regData), regDataTifPath, GrayOpt) ;
+        WriteTiff(uint16(regData), regDataTifPath); %toc %saveastiff( uint16(regData), regDataTifPath, GrayOpt) ;
     end
 end
 if verbose, fprintf('\n'); end

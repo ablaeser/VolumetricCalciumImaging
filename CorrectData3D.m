@@ -1,9 +1,9 @@
-function CorrectData3D(sbxPath, sbxInfo, shiftPath, refChan, varargin) % , tforms_optotune , Nchunks
+function CorrectData3D(sbxPath, sbxInfo, shiftPath, varargin) % , tforms_optotune , Nchunks
 IP = inputParser;
 addRequired(IP, 'sbxPath', @ischar )
 addRequired(IP, 'sbxInfo', @isstruct )
 addRequired(IP, 'shiftPath', @ischar )
-addRequired(IP, 'refChan', @isnumeric ) % for scanbox, 1 = green, 2 = red. -1 = both
+addOptional(IP, 'refChan', 'green', @ischar ) % for scanbox, PMT1 = green, 2 = red. -1 = both
 addParameter(IP, 'chunkSize', 15, @isnumeric)
 %addParameter(IP, 'type', 'median', @ischar); %options are 'median' or 'mean' for projecting the reference volume
 addParameter(IP, 'blur', 1, @isnumeric); %width of gaussian to blur for DFT reg
@@ -12,7 +12,8 @@ addParameter(IP, 'anchor',0, @isnumeric); %
 addParameter(IP, 'scale', 2, @isnumeric ) % 
 addParameter(IP, 'edges',[0,0,0,0], @isnumeric); % [left, right, top, bottom]
 addParameter(IP, 'save', true, @islogical);
-parse(IP, sbxPath, sbxInfo, shiftPath, refChan, varargin{:}); % tforms_optotune, 
+parse(IP, sbxPath, sbxInfo, shiftPath, varargin{:}); % tforms_optotune, 
+refChan = IP.Results.refChan;
 chunkSize = IP.Results.chunkSize;
 scaleFactor = IP.Results.scale;
 blurFactor = IP.Results.blur;
@@ -22,7 +23,7 @@ edges = IP.Results.edges;
 %refType = IP.Results.type;
 anchor = IP.Results.anchor;
 
-%sbxInfo = pipe.io.sbxInfo(sbxPath);
+[refPMT, refPMTname] = DeterminePMT(refChan, sbxInfo); % PMT1 = green, PMT2 = red
 Nx = sbxInfo.sz(1); Ny = sbxInfo.sz(2);
 NxCrop = Nx - edges(3) - edges(4);
 NyCrop = Ny - edges(1) - edges(2);
@@ -33,8 +34,7 @@ tic;
 w = waitbar(0,'DFT registration'); %H = parfor_progressbar(Nchunk,'DFT registration'); % 
 for c = 1:Nchunk
     % load chunk of optotune-corrected data
-    %raw_chunk = pipe.imread(sbxPath, chunkFrames*(chunk-1)+1, chunkFrames, refChan); % pipe.io.sbxRead(sbxPath, chunkFrames*(chunk-1)+1, chunkFrames, refChan, []); %
-    raw_chunk = readSBX(sbxPath, sbxInfo, chunkLims(c,1), chunkLength(c), refChan ); % readSBX(path, info, k, N, pmt, optolevel)
+    raw_chunk = readSBX(sbxPath, sbxInfo, chunkLims(c,1), chunkLength(c), refPMT ); % readSBX(path, info, k, N, pmt, optolevel)
     raw_chunk = raw_chunk(edges(3)+1:end-edges(4), edges(1)+1:end-edges(2), :);
     raw_chunk = reshape(raw_chunk, NxCrop, NyCrop, sbxInfo.Nplane, []);
     raw_chunk = imresize(raw_chunk, 1/scaleFactor); 

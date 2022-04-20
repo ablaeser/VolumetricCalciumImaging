@@ -4,7 +4,7 @@ addRequired(IP, 'sbxPath', @ischar )
 addRequired(IP, 'sbxInfo', @isstruct )
 addOptional(IP, 'shiftpath', '', @ischar )
 addParameter(IP, 'chunkSize', 15, @isnumeric )
-addParameter(IP, 'refChan', 1, @isnumeric ) % for scanbox, 1 = green, 2 = red. -1 = both
+addParameter(IP, 'refChan', 'green', @ischar ) % for scanbox, 1 = green, 2 = red. -1 = both
 addParameter(IP, 'refType', 'mean', @ischar); %options are 'median' or 'mean' for projecting the reference volume
 addParameter(IP, 'scale', 4, @isnumeric ) %
 addParameter(IP, 'edges',[0,0,0,0], @isnumeric); % [left, right, top, bottom]
@@ -17,6 +17,7 @@ parse( IP, sbxPath, sbxInfo, varargin{:} );
 shiftPath = IP.Results.shiftpath;
 chunkSize = IP.Results.chunkSize;
 refChan = IP.Results.refChan;
+[refPMT, ~] = DeterminePMT(refChan, sbxInfo); % PMT1 = green, PMT2 = red
 refType = IP.Results.refType;
 edges = IP.Results.edges;
 scale = IP.Results.scale;
@@ -35,7 +36,7 @@ tic
 w = waitbar(0,'Z interpolation...');
 for c = 1:Nchunk %parfor
     % Load current chunk
-    raw_chunk = readSBX(sbxPath, sbxInfo, chunkLims(c,1), chunkLength(c), refChan ); % readSBX(sbxPath, sbxInfo, chunkFrames*(chunk-1)+1, chunkFrames, refChan, [] );  
+    raw_chunk = readSBX(sbxPath, sbxInfo, chunkLims(c,1), chunkLength(c), refPMT ); % readSBX(sbxPath, sbxInfo, chunkFrames*(chunk-1)+1, chunkFrames, refChan, [] );  
     raw_chunk = reshape(raw_chunk, Nx, Ny, sbxInfo.Nplane, []);
     raw_chunk = raw_chunk(edges(3)+1:end-edges(4),edges(1)+1:end-edges(2),:,:);
     raw_chunk = imresize(raw_chunk,1/scale);

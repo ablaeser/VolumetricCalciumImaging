@@ -3,22 +3,22 @@ IP = inputParser;
 addRequired(IP, 'sbxPath', @ischar )
 addRequired(IP, 'sbxInfo', @isstruct )
 addRequired(IP, 'shiftPath', @ischar )
-addParameter(IP, 'pmt', [], @isnumeric )
-addParameter(IP, 'refChan', 1, @isnumeric )
+addOptional(IP, 'refChan', 'green', @ischar ) % for scanbox, PMT1 = green, 2 = red. -1 = both
 addParameter(IP, 'edges',[0,0,0,0], @isnumeric); % [left, right, top, bottom]
 addParameter(IP, 'zprojPath', '', @ischar)
 addParameter(IP, 'proj', true, @islogical);
 addParameter(IP, 'range', [0.25, 0.85], @isnumeric);
 parse(IP, sbxPath, sbxInfo, shiftPath, varargin{:}); % tforms_optotune, 
 edges = IP.Results.edges;
-pmt = IP.Results.pmt;
 refChan = IP.Results.refChan;
+[refPMT, ~] = DeterminePMT(refChan, sbxInfo); % PMT1 = green, PMT2 = red
 projToggle = IP.Results.proj;
 zprojPath = IP.Results.zprojPath;
 proj_range = IP.Results.range;
 
+[usePMT, ~] = DeterminePMT('both', sbxInfo);
+if numel(usePMT) > 1, usePMT = -1; end
 
-[pmt, ~] = DeterminePMT('both', sbxInfo); % usePMTname
 
 load(shiftPath,'-mat');
 Nrow = 512; %sbxInfo.sz(1);  
@@ -51,38 +51,9 @@ if ~exist('CS_final','var')
     if projToggle
         zproj_raw = zeros(sbxInfo.nchan, NrowCrop, NcolCrop, Nscan);
         w = waitbar(0, 'applying initial shifts');
-        %{
-        fprintf('\nLoading %s', sbxPath); tic;
-        sbx_data = readSBX(sbxPath, sbxInfo, 1, Nscan, pmt, []); toc
-        if sbxInfo.nchan == 2
-            sbx_data = permute(sbx_data, [2,3,4,5,1]); % imtranslate expects spatial dimensions first
-        end
-        sbx_data =  sbx_data(edges(3)+1:end-edges(4), edges(1)+1:end-edges(2),:,:,:); %crop it based on edges
-        tempPlaneIm = cell(sbxInfo.Nplane,1); tempVol = cell(1,sbxInfo.nchan);
-        
-        for s = 1:Nscan  
-            reg_vol = zeros(size(raw_vol)); 
-            for c = 1:sbxInfo.nchan
-                parfor z = 1:sbxInfo.Nplane
-                    tempPlaneIm{z} = imtranslate(sbx_data(:,:,z,s,c)),[CS_total(z,s), RS_total(z,s)]); %first do individual plane XY shifts 
-                end
-                tempVol{c} = cat(3, tempPlaneIm{:});
-
-                if sbxInfo.Nplane > 1
-                    tempVol{c} = imtranslate(tempVol{c}, [0,0,ZS_final(s)]); % then do z shift
-                end
-                reg_vol(c,:,:,:) = tempVol{c};
-            end
-            zproj_raw(:,:,:,s) = mean(reg_vol(:,:,:,zProjRange),4);
-
-            waitbar(s/Nscan);
-        end
-        %}
-        % {
-        
         for s = 1:Nscan
             %read the volume
-            raw_vol = readSBX(sbxPath, sbxInfo, s, 1, pmt, []); %pipe.imread(sbxPath, sbxInfo.Nplane*(i-1)+1, sbxInfo.Nplane, pmt,[]); %readSBX(path, info, k, N, pmt, optolevel)
+            raw_vol = readSBX(sbxPath, sbxInfo, s, 1, usePMT, []); %pipe.imread(sbxPath, sbxInfo.Nplane*(i-1)+1, sbxInfo.Nplane, pmt,[]); %readSBX(path, info, k, N, pmt, optolevel)
             raw_vol = reshape(raw_vol, sbxInfo.nchan, Nrow, Ncol, sbxInfo.Nplane);
             %crop it based on edges
             raw_vol = raw_vol(:,edges(3)+1:end-edges(4),edges(1)+1:end-edges(2),:);      
@@ -105,9 +76,9 @@ if ~exist('CS_final','var')
             waitbar(s/Nscan);
         end
         delete(w);
-        %}
+
         fprintf('\nRegistering z-projection... '); tic
-        [zproj_mean, R_zproj, C_zproj] = zproj_reg(1, Nscan, pmt, zProjRange, 'refchan',refChan, 'zproj_raw',zproj_raw);
+        [zproj_mean, R_zproj, C_zproj] = zproj_reg(1, Nscan, usePMT, zProjRange, 'refchan',refPMT, 'zproj_raw',zproj_raw);
         if ~isempty(zprojPath),  write2chanTiff(uint16(zproj_mean), zprojPath);  end
         R_zproj = transpose(repmat(R_zproj,1,sbxInfo.Nplane));
         C_zproj = transpose(repmat(C_zproj,1,sbxInfo.Nplane));
@@ -142,7 +113,7 @@ impixelinfo
 
 % Load the sbxopt data
 fprintf('\nLoading %s', sbxPath); tic;
-sbx_data = readSBX(sbxPath, sbxInfo, 1, Nscan, pmt, []); toc
+sbx_data = readSBX(sbxPath, sbxInfo, 1, Nscan, usePMT, []); toc
 % Apply 3D DFT translations
 w = waitbar(0,'Applying 3D DFT translations'); tic;
 if sbxInfo.nchan == 1

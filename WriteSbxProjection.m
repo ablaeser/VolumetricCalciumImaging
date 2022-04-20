@@ -16,8 +16,8 @@ addParameter( IP, 'binT', 1, @isnumeric )
 addParameter( IP, 'dir', '', @ischar ) 
 addParameter( IP, 'name', '', @ischar )
 addParameter( IP, 'type', '', @ischar ) 
-addParameter( IP, 'monochrome', true, @islogical )
-addParameter( IP, 'RGB', true, @islogical )
+addParameter( IP, 'monochrome', false, @islogical ) % write a monochrome movie for each plane?
+addParameter( IP, 'RGB', false, @islogical ) % write an RGB monochrome movie for each plane?
 addParameter( IP, 'rescale', false, @islogical )
 addParameter( IP, 'verbose', true, @islogical );
 addParameter( IP, 'overwrite', false, @islogical );
@@ -34,6 +34,8 @@ zSet = IP.Results.z;
 saveDir = IP.Results.dir;  mkdir(saveDir);
 saveName = IP.Results.name;
 sbxType = IP.Results.type;
+monochrome = IP.Results.monochrome;
+RGB = IP.Results.RGB;
 rescaleIntToggle = IP.Results.rescale;
 overwrite = IP.Results.overwrite;
 if isempty(zSet), zSet = 1:sbxInfo.Nplane; end
@@ -44,16 +46,16 @@ fileExists = exist(projPath,'file');
 outputToggle = nargout > 0;
 tic;
 % Determine which channel(s) to use
-PMTname = {'green','red'};
+
 [usePMT, usePMTname] = DeterminePMT(writeChan, sbxInfo); % usePMT
 if ~(~outputToggle && ~overwrite && fileExists)
     % Get each plane, crop, resize, and mean project (can't necessarily get the full data at once due to memory constraints)
-    projStack = zeros(sbxInfo.width, sbxInfo.height, sbxInfo.Nplane, 2); % color order: green, red
-    for Z = 1:numel(zSet) % flip(zSet) %flip(1:sbxInfo.otlevels)
+    %projStack = zeros(sbxInfo.width, sbxInfo.height, sbxInfo.Nplane, 2); % color order: red, green
+    for Z = flip(1:numel(zSet)) % flip(zSet) %flip(1:sbxInfo.otlevels)
         if verbose, fprintf('\nZ = %i', Z); end
         %if ~isempty(saveName), tempName = saveName; else, tempName = ''; end  % sprintf('%s_plane%01i',saveName, Z);
         [~, tempChan] = WriteSbxPlaneTif(sbxPath, sbxInfo, zSet(Z), 'verbose',verbose, 'dir',saveDir, 'name',saveName, 'overwrite',overwrite, ...
-            'edges',edges, 'scale',scaleFactor, 'firstScan',firstScan, 'Nscan',Nscan, 'chan',usePMTname, 'zeros',true, 'binT',binT, 'RGB',false, 'monochrome',true ); % 
+            'edges',edges, 'scale',scaleFactor, 'firstScan',firstScan, 'Nscan',Nscan, 'chan',usePMTname, 'zeros',true, 'binT',binT, 'RGB',RGB, 'monochrome',monochrome ); % 
         if strcmpi(projType,'mean')
             tempProj = cellfun(@mean, tempChan, {3,3}, 'UniformOutput',false);
         else
@@ -70,23 +72,23 @@ if ~(~outputToggle && ~overwrite && fileExists)
     if ~isempty( projPath ) || overwrite
         if verbose, fprintf('\nWriting %s', projPath); end
         if numel(usePMT) > 1 %strcmpi(writeChan, 'both')
-            chanName = {'red','green'};
-            pmtChan = [2,1]; 
+            chanName = {'red','green'}; % {'green','red'}; %PMTname = 
+            chanInd = [1,2]; %[2,1]; 
             [projDir, ~] = fileparts(projPath);
             tifStack = zeros(size(projStack,1), size(projStack,2), size(projStack,3), 3);
-            for pmt = usePMT
-                saveastiff(uint16(projStack(:,:,:,pmt)), sprintf('%s\\%s_%s.tif', projDir, sbxInfo.fileName, PMTname{pmt}));
+            for chan = usePMT
+                saveastiff(uint16(projStack(:,:,:,chan)), sprintf('%s\\%s_%s.tif', projDir, sbxInfo.fileName, chanName{chan}));
                 if ~rescaleIntToggle
-                    tifStack(:,:,:,pmtChan(pmt)) = projStack(:,:,:,pmt)/256;
+                    tifStack(:,:,:,chanInd(chan)) = projStack(:,:,:,chan)/256;
                 else
-                    tempStack = projStack(:,:,:,pmt);
+                    tempStack = projStack(:,:,:,chan);
                     chanLower = prctile(tempStack(:), 1);
                     chanUpper = max(tempStack(:)); %prctile(stackChan{chan}(:), 1);
-                    if verbose, fprintf('\nRescaling %s channel: [%i, %i] -> [0, 255]', PMTname{pmt}, chanLower, chanUpper); end
-                    tifStack(:,:,:,pmtChan(pmt)) = rescale(tempStack, 0, 2^8-1, 'inputMin',chanLower); % min(stackChan{chan}(:))
+                    if verbose, fprintf('\nRescaling %s channel: [%i, %i] -> [0, 255]', chanName{chan}, chanLower, chanUpper); end
+                    tifStack(:,:,:,chanInd(chan)) = rescale(tempStack, 0, 2^8-1, 'inputMin',chanLower); % min(stackChan{chan}(:))
                 end
-                tifStack = uint8(tifStack);
             end
+            tifStack = uint8(tifStack);
         else
             tifStack = uint16(projStack); % (:,:,:,writeChanInd)
         end

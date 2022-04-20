@@ -1,5 +1,6 @@
-function sbxInfo = FixSBX(sbxInputPath, sbxInfo, overwrite)
-if nargin < 3, overwrite = false; end
+function sbxInfo = FixSBX(sbxInputPath, sbxInfo, flipZ, overwrite)
+if nargin < 3, flipZ = false; end
+if nargin < 4, overwrite = false; end
 fprintf('\n%s', sbxInputPath)
 sbxFixPath = strcat(sbxInputPath, 'fix'); %sbxInputPath; %
 [~, chan] = DeterminePMT('both', sbxInfo); % usePMTind
@@ -15,8 +16,9 @@ if ~exist(sbxFixPath, 'file') || overwrite
     % reshape data to [chan x row x column x z x scan]
     if sbxInfo.nchan > 1
         planeData = cat( 5, planeData{:} );
-        planeData = flip( permute(planeData, [4,1,2,5,3]), 1); % switch from RGB to PMT chan order
+        planeData = flip( permute(planeData, [4,1,2,5,3]), 1); %  % switch from RGB to PMT chan order % permute(planeData, [4,1,2,5,3]);
         planeData = circshift( planeData, -1, 4);
+        if flipZ, planeData = flip(planeData, 4); end
         planeData = reshape(planeData, [size(planeData,[1,2,3]), prod(size(planeData,[4,5]))] );
         tic
         rw = pipe.io.RegWriter(sbxFixPath, sbxInfo, '.sbxfix', true);
@@ -24,23 +26,6 @@ if ~exist(sbxFixPath, 'file') || overwrite
         rw.write( planeData ); % rw.write(squeeze(uint16(tempScan)));
         toc
         rw.delete;
-        %{
-        %waitbar( s/sbxInfo.Nscan, w );
-        
-        % Write the shifted data to the sbxfix file
-        w = waitbar(0,'writing sbxfix file');
-        
-        tic
-        for s = 1:sbxInfo.Nscan
-            outScan = zeros(sbxInfo.nchan, sbxInfo.Nrow, sbxInfo.Ncol, sbxInfo.Nplane, 'uint16');
-            outScan(:,:,:,:) = planeData(:,:,:,:,s); %tempScan;
-            rw.write( outScan ); % rw.write(squeeze(uint16(tempScan)));
-            waitbar( s/sbxInfo.Nscan, w );
-        end
-        toc
-        rw.delete;
-        delete(w);
-        %}
     else
         planeData = cat( 4, planeData{:} );
         planeData = circshift( planeData, -1, 4);

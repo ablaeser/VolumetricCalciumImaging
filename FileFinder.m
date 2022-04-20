@@ -1,4 +1,4 @@
-function [ fileNames, filePaths ] = FileFinder( mainDir, varargin )
+function [fileNames, filePaths] = FileFinder( mainDir, varargin )
 %FileFinder Finds files within a directory which contain the "filetype" string. Useful for picking out files based on filetype (such as .xls).
 % same as fileFind, except returns 2 separate cell arrays instead of one
 % If filetype is not a string, FileFind will pick out folders only
